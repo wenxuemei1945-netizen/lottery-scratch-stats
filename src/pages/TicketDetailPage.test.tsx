@@ -25,6 +25,21 @@ describe("TicketDetailPage", () => {
     );
   });
 
+  it("rejects non-numeric prize amounts", async () => {
+    const ticket = makeTicket({ id: "1", code: "A", status: "unopened", prizeAmount: 0 });
+    await saveTicket(ticket);
+
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onBack={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Prize amount"), "abc");
+    await userEvent.click(screen.getByRole("button", { name: "Mark Won" }));
+
+    expect(await getTicketByCode("A")).toEqual(
+      expect.objectContaining({ status: "unopened", prizeAmount: 0 })
+    );
+    expect(screen.getByText("Prize amount must be a valid number")).toBeInTheDocument();
+  });
+
   it("shows a message and blocks invalid transitions", async () => {
     const ticket = makeTicket({ id: "1", code: "A", status: "lost", prizeAmount: 0 });
     await saveTicket(ticket);

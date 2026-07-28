@@ -22,8 +22,14 @@ export function TicketDetailPage({
     }
 
     const now = new Date().toISOString();
-    const amount = nextStatus === "won" || nextStatus === "redeemed" ? Number(prizeAmount || 0) : 0;
+    const requiresPrize = nextStatus === "won" || nextStatus === "redeemed";
+    const amount = requiresPrize ? Number(prizeAmount || 0) : 0;
     setMessage("");
+
+    if (requiresPrize && (!Number.isFinite(amount) || amount < 0)) {
+      setMessage("Prize amount must be a valid number");
+      return;
+    }
 
     await updateTicket({
       ...ticket,
