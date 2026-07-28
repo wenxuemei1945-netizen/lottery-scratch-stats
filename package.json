@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run sites:prepare",
     "preview": "vite preview --host 0.0.0.0",
+    "sites:prepare": "node scripts/prepare-sites-build.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
