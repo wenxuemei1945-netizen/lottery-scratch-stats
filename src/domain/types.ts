@@ -20,6 +20,7 @@ export interface Game {
   id: string;
   name: string;
   price: number;
+  packSize?: number;
   topPrize?: number;
   barcodePrefixPatterns?: string[];
   active: boolean;

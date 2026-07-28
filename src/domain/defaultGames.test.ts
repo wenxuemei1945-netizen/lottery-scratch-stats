@@ -32,6 +32,26 @@ describe("default games", () => {
     const merged = mergeWithDefaultGames([savedGame]);
 
     expect(merged).toHaveLength(13);
-    expect(merged.filter((game) => game.id === "default-good-luck-10")).toEqual([savedGame]);
+    expect(merged.filter((game) => game.id === "default-good-luck-10")).toEqual([
+      expect.objectContaining({ ...savedGame, packSize: 50 }),
+    ]);
+  });
+
+  it("sets pack size from ticket price", () => {
+    expect(DEFAULT_GAMES.map((game) => [game.price, game.packSize])).toEqual([
+      [50, 20],
+      [50, 20],
+      [50, 20],
+      [50, 20],
+      [30, 20],
+      [30, 20],
+      [30, 20],
+      [30, 20],
+      [20, 25],
+      [20, 25],
+      [20, 25],
+      [10, 50],
+      [10, 50],
+    ]);
   });
 });

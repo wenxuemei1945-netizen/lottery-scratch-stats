@@ -57,6 +57,7 @@ function isValidGame(value: unknown): value is Game {
   if (typeof value.createdAt !== "string") return false;
   if (typeof value.updatedAt !== "string") return false;
 
+  if (!isOptionalStringField(value.packSize, "number")) return false;
   if (!isOptionalStringField(value.topPrize, "number")) return false;
   if (!isOptionalStringField(value.barcodePrefixPatterns, "array-of-string")) return false;
 

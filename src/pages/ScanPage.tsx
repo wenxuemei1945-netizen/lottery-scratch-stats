@@ -74,7 +74,7 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
         <select value={gameId} onChange={(event) => setGameId(event.target.value)}>
           {gameOptions.map((game) => (
             <option key={game.id} value={game.id}>
-              {game.name} / {game.price} 元
+              {game.name} / {game.price} 元{game.packSize ? ` / ${game.packSize} 张/包` : ""}
             </option>
           ))}
         </select>
