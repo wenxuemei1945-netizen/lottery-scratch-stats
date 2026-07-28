@@ -75,9 +75,9 @@ export function App() {
         <TicketsPage tickets={tickets} onOpenTicket={setSelectedTicketId} />
       ) : activeTab === "stats" ? (
         <StatsPage tickets={tickets} />
-      ) : (
-        <BackupPage />
-      );
+        ) : (
+          <BackupPage onImported={reload} />
+        );
   }
 
   return (

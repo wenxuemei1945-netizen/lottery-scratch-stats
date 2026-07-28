@@ -54,3 +54,15 @@ export async function saveGame(game: Game): Promise<Game> {
   await db.put("games", game);
   return game;
 }
+
+export async function replaceAllData(games: Game[], tickets: Ticket[]): Promise<void> {
+  await resetDatabase();
+
+  for (const game of games) {
+    await saveGame(game);
+  }
+
+  for (const ticket of tickets) {
+    await saveTicket(ticket);
+  }
+}
