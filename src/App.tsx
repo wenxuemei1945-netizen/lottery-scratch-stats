@@ -40,7 +40,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const { tickets, loading, error, reload } = useLotteryData();
+  const { tickets, games, loading, error, reload } = useLotteryData();
 
   let content;
 
@@ -53,7 +53,7 @@ export function App() {
       activeTab === "home" ? (
         <HomePage tickets={tickets} />
       ) : activeTab === "scan" ? (
-        <ScanPage />
+        <ScanPage games={games} onSaved={reload} />
       ) : activeTab === "tickets" ? (
         <TicketsPage />
       ) : activeTab === "stats" ? (

@@ -158,3 +158,46 @@ select {
   display: grid;
   gap: 4px;
 }
+
+.scanner-box {
+  min-height: 180px;
+  overflow: hidden;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.field span {
+  color: #52605a;
+  font-size: 14px;
+}
+
+.field input,
+.field select {
+  min-height: 44px;
+  border: 1px solid #cfd6cb;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #ffffff;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #1d6b3b;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.message {
+  color: #1d6b3b;
+}
