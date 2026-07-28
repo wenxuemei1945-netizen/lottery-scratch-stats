@@ -17,19 +17,55 @@ const tabs = [
   { id: "backup" as const, label: "备份", icon: Upload },
 ];
 
+function LoadingState() {
+  return (
+    <section className="page state-panel" role="status" aria-live="polite">
+      <h1>刮刮乐统计</h1>
+      <p>正在加载彩票数据</p>
+    </section>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <section className="page state-panel" role="alert">
+      <h1>数据加载失败</h1>
+      <p>{message}</p>
+      <button type="button" onClick={onRetry}>
+        重试
+      </button>
+    </section>
+  );
+}
+
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const { tickets } = useLotteryData();
+  const { tickets, loading, error, reload } = useLotteryData();
+
+  let content;
+
+  if (loading) {
+    content = <LoadingState />;
+  } else if (error) {
+    content = <ErrorState message={error} onRetry={() => void reload()} />;
+  } else {
+    content =
+      activeTab === "home" ? (
+        <HomePage tickets={tickets} />
+      ) : activeTab === "scan" ? (
+        <ScanPage />
+      ) : activeTab === "tickets" ? (
+        <TicketsPage />
+      ) : activeTab === "stats" ? (
+        <StatsPage />
+      ) : (
+        <BackupPage />
+      );
+  }
 
   return (
     <main className="app-shell">
-      <div className="app-content">
-        {activeTab === "home" && <HomePage tickets={tickets} />}
-        {activeTab === "scan" && <ScanPage />}
-        {activeTab === "tickets" && <TicketsPage />}
-        {activeTab === "stats" && <StatsPage />}
-        {activeTab === "backup" && <BackupPage />}
-      </div>
+      <div className="app-content">{content}</div>
       <nav className="bottom-nav" aria-label="主导航">
         {tabs.map((tab) => {
           const Icon = tab.icon;

@@ -34,6 +34,29 @@ select {
   font-size: 24px;
 }
 
+.state-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 160px;
+  padding-top: 8px;
+}
+
+.state-panel p {
+  margin: 0;
+  color: #53605a;
+}
+
+.state-panel button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #c7d2c1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d6b3b;
+}
+
 .bottom-nav {
   position: fixed;
   right: 0;
