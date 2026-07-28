@@ -179,6 +179,12 @@ select {
   color: #65716b;
 }
 
+.empty-state {
+  margin: 0;
+  padding: 12px 0;
+  color: #65716b;
+}
+
 .ghost-button {
   min-height: 40px;
   border: 1px solid #cfd6cb;
@@ -237,5 +243,7 @@ select {
 }
 
 .message {
-  color: #1d6b3b;
+  margin: 12px 0 0;
+  color: #b6332a;
 }
+

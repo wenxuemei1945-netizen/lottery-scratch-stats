@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TICKET_STATUS_LABELS } from "../domain/ticketStatus";
+import { canTransitionTicketStatus, TICKET_STATUS_LABELS } from "../domain/ticketStatus";
 import type { Ticket, TicketStatus } from "../domain/types";
 import { updateTicket } from "../storage/ticketRepository";
 
@@ -13,19 +13,26 @@ export function TicketDetailPage({
   onBack: () => void;
 }) {
   const [prizeAmount, setPrizeAmount] = useState(ticket.prizeAmount ? String(ticket.prizeAmount) : "");
+  const [message, setMessage] = useState("");
 
-  async function saveStatus(status: TicketStatus, amount: number) {
+  async function saveStatus(nextStatus: TicketStatus) {
+    if (!canTransitionTicketStatus(ticket.status, nextStatus)) {
+      setMessage("Current status cannot change to that state");
+      return;
+    }
+
     const now = new Date().toISOString();
+    const amount = nextStatus === "won" || nextStatus === "redeemed" ? Number(prizeAmount || 0) : 0;
+    setMessage("");
 
     await updateTicket({
       ...ticket,
-      status,
+      status: nextStatus,
       prizeAmount: amount,
-      scratchedAt: status === "unopened" ? undefined : ticket.scratchedAt ?? now,
-      redeemedAt: status === "redeemed" ? now : ticket.redeemedAt,
+      scratchedAt: nextStatus === "unopened" ? undefined : ticket.scratchedAt ?? now,
+      redeemedAt: nextStatus === "redeemed" ? ticket.redeemedAt ?? now : undefined,
       updatedAt: now,
     });
-
     await onSaved();
     onBack();
   }
@@ -33,14 +40,14 @@ export function TicketDetailPage({
   return (
     <section className="page">
       <button className="ghost-button" type="button" onClick={onBack}>
-        返回
+        Back
       </button>
       <h1>{ticket.gameName}</h1>
       <p>{ticket.code}</p>
-      <p>当前状态：{TICKET_STATUS_LABELS[ticket.status]}</p>
+      <p>Current status: {TICKET_STATUS_LABELS[ticket.status]}</p>
 
       <label className="field">
-        <span>中奖金额</span>
+        <span>Prize amount</span>
         <input
           inputMode="decimal"
           value={prizeAmount}
@@ -48,23 +55,17 @@ export function TicketDetailPage({
         />
       </label>
 
-      <button className="primary-button" type="button" onClick={() => saveStatus("lost", 0)}>
-        标记未中奖
+      {message ? <p className="message">{message}</p> : null}
+
+      <button className="primary-button" type="button" onClick={() => void saveStatus("lost")}>
+        Mark Lost
       </button>
-      <button
-        className="primary-button"
-        type="button"
-        onClick={() => saveStatus("won", Number(prizeAmount || 0))}
-      >
-        标记中奖
+      <button className="primary-button" type="button" onClick={() => void saveStatus("won")}>
+        Mark Won
       </button>
       {ticket.status === "won" && (
-        <button
-          className="primary-button"
-          type="button"
-          onClick={() => saveStatus("redeemed", ticket.prizeAmount)}
-        >
-          标记已兑奖
+        <button className="primary-button" type="button" onClick={() => void saveStatus("redeemed")}>
+          Mark Redeemed
         </button>
       )}
     </section>

@@ -11,18 +11,18 @@ import { TicketsPage } from "./pages/TicketsPage";
 type Tab = "home" | "scan" | "tickets" | "stats" | "backup";
 
 const tabs = [
-  { id: "home" as const, label: "首页", icon: Home },
-  { id: "scan" as const, label: "扫码", icon: QrCode },
-  { id: "tickets" as const, label: "彩票", icon: List },
-  { id: "stats" as const, label: "统计", icon: BarChart3 },
-  { id: "backup" as const, label: "备份", icon: Upload },
+  { id: "home" as const, label: "Home", icon: Home },
+  { id: "scan" as const, label: "Scan", icon: QrCode },
+  { id: "tickets" as const, label: "Tickets", icon: List },
+  { id: "stats" as const, label: "Stats", icon: BarChart3 },
+  { id: "backup" as const, label: "Backup", icon: Upload },
 ];
 
 function LoadingState() {
   return (
     <section className="page state-panel" role="status" aria-live="polite">
-      <h1>彩票统计</h1>
-      <p>正在加载彩票数据</p>
+      <h1>Lottery stats</h1>
+      <p>Loading ticket data</p>
     </section>
   );
 }
@@ -30,10 +30,10 @@ function LoadingState() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <section className="page state-panel" role="alert">
-      <h1>数据加载失败</h1>
+      <h1>Data load failed</h1>
       <p>{message}</p>
       <button type="button" onClick={onRetry}>
-        重试
+        Retry
       </button>
     </section>
   );
@@ -45,6 +45,11 @@ export function App() {
   const { tickets, games, loading, error, reload } = useLotteryData();
 
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId);
+
+  function handleTabClick(tab: Tab) {
+    setSelectedTicketId(null);
+    setActiveTab(tab);
+  }
 
   let content;
 
@@ -78,7 +83,7 @@ export function App() {
   return (
     <main className="app-shell">
       <div className="app-content">{content}</div>
-      <nav className="bottom-nav" aria-label="主导航">
+      <nav className="bottom-nav" aria-label="Primary navigation">
         {tabs.map((tab) => {
           const Icon = tab.icon;
 
@@ -87,7 +92,7 @@ export function App() {
               key={tab.id}
               className={activeTab === tab.id ? "active" : ""}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
             >
               <Icon aria-hidden="true" size={20} />
               <span>{tab.label}</span>

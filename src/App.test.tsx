@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { useLotteryData } from "./hooks/useLotteryData";
+import { makeTicket } from "./test/testData";
 
 vi.mock("./hooks/useLotteryData", () => ({
   useLotteryData: vi.fn(),
@@ -32,8 +33,8 @@ describe("App navigation", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("正在加载彩票数据");
-    expect(screen.queryByText("已记录 0 张彩票")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading ticket data");
+    expect(screen.queryByText("Lottery list")).not.toBeInTheDocument();
   });
 
   it("shows an error state when loading fails", () => {
@@ -48,17 +49,37 @@ describe("App navigation", () => {
     render(<App />);
 
     expect(screen.getByRole("alert")).toHaveTextContent("IndexedDB unavailable");
-    expect(screen.getByRole("button", { name: "重试" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
   });
 
   it("starts on the home page and navigates to ticket list", async () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "刮刮乐统计" })).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Tickets" }));
+
+    expect(screen.getByRole("heading", { name: "Ticket list" })).toBeInTheDocument();
+  });
+
+  it("lets the bottom nav switch away from ticket detail", async () => {
+    useLotteryDataMock.mockReturnValue({
+      tickets: [makeTicket({ id: "ticket-1", code: "A", gameName: "Good Luck", status: "unopened" })],
+      games: [],
+      loading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    render(<App />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "彩票" }));
+    await user.click(screen.getByRole("button", { name: "Tickets" }));
+    await user.click(screen.getByRole("button", { name: /A/ }));
 
-    expect(screen.getByRole("heading", { name: "彩票列表" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Good Luck" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Tickets" }));
+
+    expect(screen.getByRole("heading", { name: "Ticket list" })).toBeInTheDocument();
   });
 });

@@ -19,7 +19,7 @@ describe("TicketsPage", () => {
     );
 
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByLabelText("状态筛选"), "unopened");
+    await user.selectOptions(screen.getByLabelText("Status filter"), "unopened");
 
     expect(screen.getByText("A")).toBeInTheDocument();
     expect(screen.queryByText("B")).not.toBeInTheDocument();
@@ -27,5 +27,19 @@ describe("TicketsPage", () => {
     await user.click(screen.getByRole("button", { name: /A/ }));
 
     expect(onOpenTicket).toHaveBeenCalledWith("1");
+  });
+
+  it("shows an empty state when no tickets match the filters", async () => {
+    render(
+      <TicketsPage
+        tickets={[makeTicket({ id: "1", code: "A", status: "lost" })]}
+        onOpenTicket={vi.fn()}
+      />
+    );
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText("Status filter"), "unopened");
+
+    expect(screen.getByText("No matching tickets")).toBeInTheDocument();
   });
 });
