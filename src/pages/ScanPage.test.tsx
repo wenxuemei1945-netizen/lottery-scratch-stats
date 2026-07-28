@@ -48,6 +48,15 @@ describe("ScanPage", () => {
     expect(screen.getAllByRole("option", { name: "好运十倍 / 10 元" })).toHaveLength(1);
   });
 
+  it("shows all built-in ticket types when no games are saved yet", () => {
+    render(<ScanPage games={[]} onSaved={vi.fn()} />);
+
+    expect(screen.getAllByRole("option")).toHaveLength(13);
+    expect(screen.getByRole("option", { name: "正当红 / 50 元" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "喜相逢-心想事成 / 10 元" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "好运十倍 / 10 元" })).toBeInTheDocument();
+  });
+
   it("shows a duplicate code message when the ticket code already exists", async () => {
     await saveTicket(makeTicket({ code: "DUPLICATE-CODE-001" }));
 

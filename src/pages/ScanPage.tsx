@@ -1,22 +1,18 @@
 import { useMemo, useState } from "react";
+import { DEFAULT_GAMES, mergeWithDefaultGames } from "../domain/defaultGames";
 import type { Game } from "../domain/types";
 import { Scanner } from "../scanner/Scanner";
 import { getTicketByCode, saveGame, saveTicket } from "../storage/ticketRepository";
 
 export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Promise<void> }) {
-  const fallbackGame = useMemo(() => defaultGame(), []);
+  const gameOptions = useMemo(() => mergeWithDefaultGames(games), [games]);
   const [code, setCode] = useState("");
-  const [gameId, setGameId] = useState(games[0]?.id ?? fallbackGame.id);
+  const [gameId, setGameId] = useState(games[0]?.id ?? DEFAULT_GAMES[0].id);
   const [message, setMessage] = useState("");
 
   const selectedGame = useMemo(
-    () => games.find((game) => game.id === gameId) ?? fallbackGame,
-    [fallbackGame, gameId, games]
-  );
-
-  const gameOptions = useMemo(
-    () => (games.some((game) => game.id === fallbackGame.id) ? games : [...games, fallbackGame]),
-    [fallbackGame, games]
+    () => gameOptions.find((game) => game.id === gameId) ?? gameOptions[0],
+    [gameId, gameOptions]
   );
 
   async function handleSave() {
@@ -89,18 +85,4 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
       {message && <p className="message">{message}</p>}
     </section>
   );
-}
-
-function defaultGame(): Game {
-  const now = new Date().toISOString();
-
-  return {
-    id: "default-good-luck-10",
-    name: "好运十倍",
-    price: 10,
-    topPrize: 400000,
-    active: true,
-    createdAt: now,
-    updatedAt: now,
-  };
 }
