@@ -1,16 +1,22 @@
 import { useMemo, useState } from "react";
 import type { Game } from "../domain/types";
 import { Scanner } from "../scanner/Scanner";
-import { saveGame, saveTicket } from "../storage/ticketRepository";
+import { getTicketByCode, saveGame, saveTicket } from "../storage/ticketRepository";
 
 export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Promise<void> }) {
+  const fallbackGame = useMemo(() => defaultGame(), []);
   const [code, setCode] = useState("");
-  const [gameId, setGameId] = useState(games[0]?.id ?? "default-good-luck-10");
+  const [gameId, setGameId] = useState(games[0]?.id ?? fallbackGame.id);
   const [message, setMessage] = useState("");
 
   const selectedGame = useMemo(
-    () => games.find((game) => game.id === gameId) ?? defaultGame(),
-    [gameId, games]
+    () => games.find((game) => game.id === gameId) ?? fallbackGame,
+    [fallbackGame, gameId, games]
+  );
+
+  const gameOptions = useMemo(
+    () => (games.some((game) => game.id === fallbackGame.id) ? games : [...games, fallbackGame]),
+    [fallbackGame, games]
   );
 
   async function handleSave() {
@@ -21,28 +27,38 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
       return;
     }
 
-    if (!games.some((game) => game.id === selectedGame.id)) {
-      await saveGame(selectedGame);
+    if (await getTicketByCode(cleanCode)) {
+      setMessage("彩票编号已存在");
+      return;
     }
 
-    const now = new Date().toISOString();
+    try {
+      if (!games.some((game) => game.id === selectedGame.id)) {
+        await saveGame(selectedGame);
+      }
 
-    await saveTicket({
-      id: crypto.randomUUID(),
-      code: cleanCode,
-      gameId: selectedGame.id,
-      gameName: selectedGame.name,
-      price: selectedGame.price,
-      status: "unopened",
-      prizeAmount: 0,
-      purchasedAt: now.slice(0, 10),
-      createdAt: now,
-      updatedAt: now,
-    });
+      const now = new Date().toISOString();
 
-    setCode("");
-    setMessage("已保存为未刮开");
-    await onSaved();
+      await saveTicket({
+        id: crypto.randomUUID(),
+        code: cleanCode,
+        gameId: selectedGame.id,
+        gameName: selectedGame.name,
+        price: selectedGame.price,
+        status: "unopened",
+        prizeAmount: 0,
+        purchasedAt: now.slice(0, 10),
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      setCode("");
+      setMessage("已保存为未刮开");
+      await onSaved();
+    } catch (cause) {
+      const errorMessage = cause instanceof Error ? cause.message : "";
+      setMessage(errorMessage.includes("已存在") ? "彩票编号已存在" : "保存失败，请重试");
+    }
   }
 
   return (
@@ -60,7 +76,7 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
       <label className="field">
         <span>票种</span>
         <select value={gameId} onChange={(event) => setGameId(event.target.value)}>
-          {[...games, defaultGame()].map((game) => (
+          {gameOptions.map((game) => (
             <option key={game.id} value={game.id}>
               {game.name} / {game.price} 元
             </option>

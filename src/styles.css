@@ -167,6 +167,17 @@ select {
   background: #ffffff;
 }
 
+.scanner-shell {
+  display: grid;
+  gap: 8px;
+}
+
+.scanner-help {
+  margin: 0;
+  color: #65716b;
+  font-size: 13px;
+}
+
 .field {
   display: grid;
   gap: 6px;

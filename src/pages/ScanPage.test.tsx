@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getTicketByCode, resetDatabase } from "../storage/ticketRepository";
-import { makeGame } from "../test/testData";
+import { getTicketByCode, resetDatabase, saveTicket } from "../storage/ticketRepository";
+import { makeGame, makeTicket } from "../test/testData";
 import { ScanPage } from "./ScanPage";
 
 vi.mock("../scanner/Scanner", () => ({
@@ -32,6 +32,34 @@ describe("ScanPage", () => {
       expect.objectContaining({ status: "unopened", gameName: "好运十倍", price: 10 })
     );
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("does not duplicate the default game option when it already exists", () => {
+    render(
+      <ScanPage
+        games={[
+          makeGame({ id: "default-good-luck-10", name: "好运十倍", price: 10 }),
+          makeGame({ id: "game-2", name: "快乐星球", price: 20 }),
+        ]}
+        onSaved={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByRole("option", { name: "好运十倍 / 10 元" })).toHaveLength(1);
+  });
+
+  it("shows a duplicate code message when the ticket code already exists", async () => {
+    await saveTicket(makeTicket({ code: "DUPLICATE-CODE-001" }));
+
+    const onSaved = vi.fn();
+    render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("彩票编号"), "DUPLICATE-CODE-001");
+    await user.click(screen.getByRole("button", { name: "保存入库" }));
+
+    expect(await screen.findByText("彩票编号已存在")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
   it("fills the code field from scanner detection", async () => {
