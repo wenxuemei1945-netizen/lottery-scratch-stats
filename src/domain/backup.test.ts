@@ -12,6 +12,18 @@ describe("backup helpers", () => {
     expect(backup.tickets).toHaveLength(1);
   });
 
+  it("copies game and ticket arrays when creating backup", () => {
+    const games = [makeGame()];
+    const tickets = [makeTicket()];
+
+    const backup = createBackup(games, tickets, "2026-07-28T00:00:00.000Z");
+
+    expect(backup.games).not.toBe(games);
+    expect(backup.tickets).not.toBe(tickets);
+    expect(backup.games).toEqual(games);
+    expect(backup.tickets).toEqual(tickets);
+  });
+
   it("parses valid backup JSON", () => {
     const backup = createBackup([makeGame()], [makeTicket()], "2026-07-28T00:00:00.000Z");
 
@@ -22,5 +34,29 @@ describe("backup helpers", () => {
     expect(() => parseBackupJson("{bad json")).toThrow("\u5907\u4efd\u6587\u4ef6\u4e0d\u662f\u6709\u6548\u7684 JSON");
     expect(() => parseBackupJson(JSON.stringify({ version: 2, games: [], tickets: [] }))).toThrow("\u5907\u4efd\u6587\u4ef6\u7248\u672c\u4e0d\u652f\u6301");
     expect(() => parseBackupJson(JSON.stringify({ version: 1, games: {}, tickets: [] }))).toThrow("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
+  });
+
+  it("rejects malformed game and ticket entries", () => {
+    expect(() =>
+      parseBackupJson(
+        JSON.stringify({
+          version: 1,
+          exportedAt: "2026-07-28T00:00:00.000Z",
+          games: [{ ...makeGame(), id: 123 }],
+          tickets: [makeTicket()]
+        })
+      )
+    ).toThrow("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
+
+    expect(() =>
+      parseBackupJson(
+        JSON.stringify({
+          version: 1,
+          exportedAt: "2026-07-28T00:00:00.000Z",
+          games: [makeGame()],
+          tickets: [{ ...makeTicket(), status: "unknown" }]
+        })
+      )
+    ).toThrow("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
   });
 });
