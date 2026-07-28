@@ -5,6 +5,7 @@ import { BackupPage } from "./pages/BackupPage";
 import { HomePage } from "./pages/HomePage";
 import { ScanPage } from "./pages/ScanPage";
 import { StatsPage } from "./pages/StatsPage";
+import { TicketDetailPage } from "./pages/TicketDetailPage";
 import { TicketsPage } from "./pages/TicketsPage";
 
 type Tab = "home" | "scan" | "tickets" | "stats" | "backup";
@@ -20,7 +21,7 @@ const tabs = [
 function LoadingState() {
   return (
     <section className="page state-panel" role="status" aria-live="polite">
-      <h1>刮刮乐统计</h1>
+      <h1>彩票统计</h1>
       <p>正在加载彩票数据</p>
     </section>
   );
@@ -40,7 +41,10 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const { tickets, games, loading, error, reload } = useLotteryData();
+
+  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId);
 
   let content;
 
@@ -48,6 +52,14 @@ export function App() {
     content = <LoadingState />;
   } else if (error) {
     content = <ErrorState message={error} onRetry={() => void reload()} />;
+  } else if (selectedTicket) {
+    content = (
+      <TicketDetailPage
+        ticket={selectedTicket}
+        onSaved={reload}
+        onBack={() => setSelectedTicketId(null)}
+      />
+    );
   } else {
     content =
       activeTab === "home" ? (
@@ -55,7 +67,7 @@ export function App() {
       ) : activeTab === "scan" ? (
         <ScanPage games={games} onSaved={reload} />
       ) : activeTab === "tickets" ? (
-        <TicketsPage />
+        <TicketsPage tickets={tickets} onOpenTicket={setSelectedTicketId} />
       ) : activeTab === "stats" ? (
         <StatsPage tickets={tickets} />
       ) : (

@@ -159,6 +159,33 @@ select {
   gap: 4px;
 }
 
+.ticket-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: left;
+  background: #ffffff;
+}
+
+.ticket-row span {
+  font-size: 13px;
+  color: #65716b;
+}
+
+.ticket-row small {
+  color: #65716b;
+}
+
+.ghost-button {
+  min-height: 40px;
+  border: 1px solid #cfd6cb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 .scanner-box {
   min-height: 180px;
   overflow: hidden;
