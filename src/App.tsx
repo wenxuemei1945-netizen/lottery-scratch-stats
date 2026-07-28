@@ -57,7 +57,7 @@ export function App() {
       ) : activeTab === "tickets" ? (
         <TicketsPage />
       ) : activeTab === "stats" ? (
-        <StatsPage />
+        <StatsPage tickets={tickets} />
       ) : (
         <BackupPage />
       );

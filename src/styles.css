@@ -89,3 +89,72 @@ select {
 .bottom-nav span {
   font-size: 12px;
 }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  min-height: 92px;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.stat-card span,
+.list-row span,
+.report-summary {
+  color: #65716b;
+  font-size: 13px;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 22px;
+}
+
+.money-good,
+.stat-card.good strong {
+  color: #177245;
+}
+
+.money-bad,
+.stat-card.bad strong {
+  color: #b6332a;
+}
+
+.summary-line {
+  margin-top: 12px;
+  color: #3f4b45;
+}
+
+.report-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.list-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.list-row div {
+  display: grid;
+  gap: 4px;
+}
