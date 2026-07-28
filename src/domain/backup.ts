@@ -1,5 +1,4 @@
-import type { Game, Ticket } from "./types";
-import type { TicketStatus } from "./types";
+import type { Game, Ticket, TicketStatus } from "./types";
 
 export interface AppBackup {
   version: 1;
@@ -30,15 +29,23 @@ export function parseBackupJson(json: string): AppBackup {
     throw new Error("\u5907\u4efd\u6587\u4ef6\u7248\u672c\u4e0d\u652f\u6301");
   }
 
-  if (!Array.isArray(parsed.games) || !Array.isArray(parsed.tickets) || typeof parsed.exportedAt !== "string") {
+  if (!isAppBackup(parsed)) {
     throw new Error("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
   }
 
-  if (!parsed.games.every(isValidGame) || !parsed.tickets.every(isValidTicket)) {
-    throw new Error("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
-  }
+  return parsed;
+}
 
-  return parsed as AppBackup;
+function isAppBackup(value: unknown): value is AppBackup {
+  return (
+    isRecord(value) &&
+    value.version === 1 &&
+    typeof value.exportedAt === "string" &&
+    Array.isArray(value.games) &&
+    Array.isArray(value.tickets) &&
+    value.games.every(isValidGame) &&
+    value.tickets.every(isValidTicket)
+  );
 }
 
 function isValidGame(value: unknown): value is Game {
