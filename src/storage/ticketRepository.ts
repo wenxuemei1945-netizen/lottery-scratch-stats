@@ -56,13 +56,40 @@ export async function saveGame(game: Game): Promise<Game> {
 }
 
 export async function replaceAllData(games: Game[], tickets: Ticket[]): Promise<void> {
-  await resetDatabase();
+  ensureUniqueTicketCodes(tickets);
 
-  for (const game of games) {
-    await saveGame(game);
+  const db = await getDatabase();
+  const transaction = db.transaction(["games", "tickets"], "readwrite");
+  const gamesStore = transaction.objectStore("games");
+  const ticketsStore = transaction.objectStore("tickets");
+
+  try {
+    await gamesStore.clear();
+    await ticketsStore.clear();
+
+    for (const game of games) {
+      await gamesStore.put(game);
+    }
+
+    for (const ticket of tickets) {
+      await ticketsStore.put(ticket);
+    }
+
+    await transaction.done;
+  } catch (error) {
+    await transaction.done.catch(() => undefined);
+    throw error;
   }
+}
+
+function ensureUniqueTicketCodes(tickets: Ticket[]): void {
+  const seenCodes = new Set<string>();
 
   for (const ticket of tickets) {
-    await saveTicket(ticket);
+    if (seenCodes.has(ticket.code)) {
+      throw new Error("彩票编号已存在");
+    }
+
+    seenCodes.add(ticket.code);
   }
 }

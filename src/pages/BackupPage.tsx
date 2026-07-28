@@ -13,16 +13,20 @@ export function BackupPage({ onImported }: { onImported: () => Promise<void> }) 
     link.href = url;
     link.download = `lottery-backup-${backup.exportedAt.slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async function importBackup(file: File | undefined) {
     if (!file) return;
 
-    const backup = parseBackupJson(await readFileText(file));
-    await replaceAllData(backup.games, backup.tickets);
-    await onImported();
-    setMessage("导入完成");
+    try {
+      const backup = parseBackupJson(await readFileText(file));
+      await replaceAllData(backup.games, backup.tickets);
+      await onImported();
+      setMessage("导入完成");
+    } catch (error) {
+      setMessage(`导入失败：${error instanceof Error ? error.message : "备份文件格式无效"}`);
+    }
   }
 
   return (

@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { makeGame, makeTicket } from "../test/testData";
-import { getTicketByCode, listGames, listTickets, resetDatabase, saveGame, saveTicket } from "./ticketRepository";
+import {
+  getTicketByCode,
+  listGames,
+  listTickets,
+  replaceAllData,
+  resetDatabase,
+  saveGame,
+  saveTicket
+} from "./ticketRepository";
 
 describe("ticket repository", () => {
   beforeEach(async () => {
@@ -8,9 +16,9 @@ describe("ticket repository", () => {
   });
 
   it("saves and lists games", async () => {
-    await saveGame(makeGame({ id: "game-1", name: "濂借繍鍗佸€?" }));
+    await saveGame(makeGame({ id: "game-1", name: "婵傚€熺箥閸椾礁鈧?" }));
 
-    expect(await listGames()).toEqual([expect.objectContaining({ id: "game-1", name: "濂借繍鍗佸€?" })]);
+    expect(await listGames()).toEqual([expect.objectContaining({ id: "game-1", name: "婵傚€熺箥閸椾礁鈧?" })]);
   });
 
   it("saves tickets and finds them by code", async () => {
@@ -26,5 +34,28 @@ describe("ticket repository", () => {
     await saveTicket(makeTicket({ id: "ticket-1", code: "A" }));
 
     await expect(saveTicket(makeTicket({ id: "ticket-2", code: "A" }))).rejects.toThrow("彩票编号已存在");
+  });
+
+  it("keeps existing data when replaceAllData fails", async () => {
+    const existingGame = makeGame({ id: "existing-game", name: "Existing" });
+    const existingTicket = makeTicket({ id: "existing-ticket", code: "EXISTING" });
+    await saveGame(existingGame);
+    await saveTicket(existingTicket);
+
+    const nextGame = makeGame({ id: "next-game", name: "Next" });
+    const duplicateTicketCode = "DUPLICATE-CODE";
+
+    await expect(
+      replaceAllData(
+        [nextGame],
+        [
+          makeTicket({ id: "next-ticket-1", code: duplicateTicketCode }),
+          makeTicket({ id: "next-ticket-2", code: duplicateTicketCode })
+        ]
+      )
+    ).rejects.toThrow();
+
+    expect(await listGames()).toEqual([existingGame]);
+    expect(await listTickets()).toEqual([existingTicket]);
   });
 });
