@@ -19,6 +19,14 @@ vi.mock("../scanner/Scanner", () => ({
   ),
 }));
 
+function recognized(code: string) {
+  return {
+    code,
+    rawText: code,
+    attempts: [{ regionId: "bottom-right-number", text: code }],
+  };
+}
+
 describe("ScanPage", () => {
   beforeEach(async () => {
     await resetDatabase();
@@ -111,7 +119,7 @@ describe("ScanPage", () => {
   });
 
   it("fills the code field from photo OCR when package information is incomplete", async () => {
-    recognizeTicketCodeMock.mockResolvedValue("J0810-25273-0133810-109-3");
+    recognizeTicketCodeMock.mockResolvedValue(recognized("J0810-25273-0133810-109-3"));
     render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
 
     const user = userEvent.setup();
@@ -123,7 +131,7 @@ describe("ScanPage", () => {
   });
 
   it("automatically saves a ticket after photo OCR when package information is ready", async () => {
-    recognizeTicketCodeMock.mockResolvedValue("J0810-25273-0133810-109-3");
+    recognizeTicketCodeMock.mockResolvedValue(recognized("J0810-25273-0133810-109-3"));
     const onSaved = vi.fn();
     render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
 
@@ -142,5 +150,25 @@ describe("ScanPage", () => {
     );
     expect(screen.getByLabelText("本包第几张")).toHaveValue("2");
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("shows OCR diagnostics when photo recognition fails", async () => {
+    recognizeTicketCodeMock.mockResolvedValue({
+      code: null,
+      rawText: "J0810 25273\n无法看清",
+      attempts: [
+        { regionId: "bottom-right-number", text: "" },
+        { regionId: "bottom-center-number", text: "J0810 25273" },
+      ],
+    });
+    render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
+
+    const user = userEvent.setup();
+    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText("拍照识别编号"), image);
+
+    expect(await screen.findByText("未识别到完整编号，请重新拍清底部编号或手动输入")).toBeInTheDocument();
+    expect(screen.getByText("识别到的文字：J0810 25273 无法看清")).toBeInTheDocument();
+    expect(screen.getByText("已尝试 2 个票面区域")).toBeInTheDocument();
   });
 });

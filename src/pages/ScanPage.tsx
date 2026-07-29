@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { DEFAULT_GAMES, mergeWithDefaultGames } from "../domain/defaultGames";
 import type { Game } from "../domain/types";
+import type { TicketCodeRecognitionResult } from "../ocr/ticketCodeOcr";
 import { recognizeTicketCode } from "../ocr/ticketCodeOcr";
 import { Scanner } from "../scanner/Scanner";
 import { getTicketByCode, saveGame, saveTicket } from "../storage/ticketRepository";
@@ -13,6 +14,7 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
   const [packName, setPackName] = useState("");
   const [packIndex, setPackIndex] = useState("1");
   const [message, setMessage] = useState("");
+  const [ocrDiagnostics, setOcrDiagnostics] = useState<TicketCodeRecognitionResult | null>(null);
   const [recognizing, setRecognizing] = useState(false);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -88,6 +90,7 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
   }
 
   async function handleSave() {
+    setOcrDiagnostics(null);
     await saveTicketRecord(code.trim());
   }
 
@@ -95,20 +98,22 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
     if (!file || recognizing) return;
 
     setRecognizing(true);
+    setOcrDiagnostics(null);
     setMessage("正在识别照片编号...");
 
     try {
-      const detectedCode = await recognizeTicketCode(file);
+      const result = normalizeRecognitionResult(await recognizeTicketCode(file));
 
-      if (!detectedCode) {
-        setMessage("未识别到编号，请重新拍摄底部编号或手动输入");
+      if (!result.code) {
+        setOcrDiagnostics(result);
+        setMessage("未识别到完整编号，请重新拍清底部编号或手动输入");
         return;
       }
 
-      setCode(detectedCode);
+      setCode(result.code);
 
       if (packName.trim() && packIndex.trim()) {
-        const saved = await saveTicketRecord(detectedCode, "已拍照识别并保存入库");
+        const saved = await saveTicketRecord(result.code, "已拍照识别并保存入库");
         if (!saved) return;
       } else {
         setMessage("已识别编号，请填写包号后保存入库");
@@ -167,6 +172,26 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
         保存入库
       </button>
       {message && <p className="message">{message}</p>}
+      {ocrDiagnostics && (
+        <div className="ocr-diagnostics">
+          <p>已尝试 {ocrDiagnostics.attempts.length} 个票面区域</p>
+          {ocrDiagnostics.rawText && <p>识别到的文字：{formatOcrRawText(ocrDiagnostics.rawText)}</p>}
+        </div>
+      )}
     </section>
   );
+}
+
+function normalizeRecognitionResult(result: TicketCodeRecognitionResult | string | null): TicketCodeRecognitionResult {
+  if (typeof result === "string") {
+    return { code: result, rawText: result, attempts: [{ regionId: "legacy", text: result }] };
+  }
+
+  if (result) return result;
+
+  return { code: null, rawText: "", attempts: [] };
+}
+
+function formatOcrRawText(text: string): string {
+  return text.replace(/\s+/g, " ").trim().slice(0, 80);
 }

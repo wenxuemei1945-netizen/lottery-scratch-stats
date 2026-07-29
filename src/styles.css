@@ -346,3 +346,20 @@ select {
   margin: 12px 0 0;
   color: #b6332a;
 }
+
+.ocr-diagnostics {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  border: 1px solid #e1d6bd;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fffaf0;
+  color: #6b5730;
+  font-size: 13px;
+}
+
+.ocr-diagnostics p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
