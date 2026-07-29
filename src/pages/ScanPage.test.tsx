@@ -24,14 +24,36 @@ describe("ScanPage", () => {
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("彩票编号"), "J0353-26082-0564563-133-3");
+    await user.type(screen.getByLabelText("包号"), "好运十倍-001");
     await user.click(screen.getByRole("button", { name: "保存入库" }));
     await screen.findByText("已保存为未刮开");
 
     const ticket = await getTicketByCode("J0353-26082-0564563-133-3");
     expect(ticket).toEqual(
-      expect.objectContaining({ status: "unopened", gameName: "好运十倍", price: 10 })
+      expect.objectContaining({
+        status: "unopened",
+        gameName: "好运十倍",
+        price: 10,
+        packId: "game-1:好运十倍-001",
+        packName: "好运十倍-001",
+        packIndex: 1,
+        packSize: 50,
+      })
     );
+    expect(screen.getByLabelText("本包第几张")).toHaveValue("2");
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("requires a package code before saving", async () => {
+    const onSaved = vi.fn();
+    render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("彩票编号"), "J0353-26082-0564563-133-3");
+    await user.click(screen.getByRole("button", { name: "保存入库" }));
+
+    expect(await screen.findByText("请输入包号")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
   it("does not duplicate the default game option when it already exists", () => {
@@ -65,6 +87,7 @@ describe("ScanPage", () => {
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("彩票编号"), "DUPLICATE-CODE-001");
+    await user.type(screen.getByLabelText("包号"), "好运十倍-001");
     await user.click(screen.getByRole("button", { name: "保存入库" }));
 
     expect(await screen.findByText("彩票编号已存在")).toBeInTheDocument();

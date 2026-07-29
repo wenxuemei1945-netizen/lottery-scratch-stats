@@ -44,6 +44,11 @@ export async function getTicketByCode(code: string): Promise<Ticket | undefined>
   return db.getFromIndex("tickets", "by-code", code);
 }
 
+export async function deleteTicket(id: string): Promise<void> {
+  const db = await getDatabase();
+  await db.delete("tickets", id);
+}
+
 export async function listGames(): Promise<Game[]> {
   const db = await getDatabase();
   return db.getAll("games");

@@ -18,6 +18,13 @@ export interface GameStats extends OverallStats {
   gameName: string;
 }
 
+export interface PackStats extends OverallStats {
+  packId: string;
+  packName: string;
+  gameName: string;
+  packSize?: number;
+}
+
 export function calculateOverallStats(tickets: Ticket[]): OverallStats {
   const totalTickets = tickets.length;
   const unopenedTickets = tickets.filter((ticket) => ticket.status === "unopened").length;
@@ -54,4 +61,29 @@ export function calculateGameStats(tickets: Ticket[]): GameStats[] {
     gameName: gameTickets[0]?.gameName ?? "",
     ...calculateOverallStats(gameTickets)
   }));
+}
+
+export function calculatePackStats(tickets: Ticket[]): PackStats[] {
+  const grouped = new Map<string, Ticket[]>();
+
+  for (const ticket of tickets) {
+    const packId = ticket.packId ?? "unassigned";
+    const existing = grouped.get(packId) ?? [];
+    existing.push(ticket);
+    grouped.set(packId, existing);
+  }
+
+  return [...grouped.entries()]
+    .map(([packId, packTickets]) => {
+      const firstTicket = packTickets[0];
+
+      return {
+        packId,
+        packName: firstTicket?.packName ?? "未分包票据",
+        gameName: firstTicket?.gameName ?? "",
+        packSize: firstTicket?.packSize,
+        ...calculateOverallStats(packTickets)
+      };
+    })
+    .sort((left, right) => left.packName.localeCompare(right.packName, "zh-Hans-CN"));
 }

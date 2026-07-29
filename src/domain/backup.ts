@@ -22,7 +22,7 @@ export function parseBackupJson(json: string): AppBackup {
   try {
     parsed = JSON.parse(json);
   } catch {
-    throw new Error("\u5907\u4efd\u6587\u4ef6\u4e0d\u662f\u6709\u6548\u7684 JSON");
+    throw new Error("备份文件不是有效的数据文件");
   }
 
   if (!isRecord(parsed) || parsed.version !== 1) {
@@ -80,6 +80,10 @@ function isValidTicket(value: unknown): value is Ticket {
   if (!isOptionalStringField(value.scratchedAt, "string")) return false;
   if (!isOptionalStringField(value.redeemedAt, "string")) return false;
   if (!isOptionalStringField(value.note, "string")) return false;
+  if (!isOptionalStringField(value.packId, "string")) return false;
+  if (!isOptionalStringField(value.packName, "string")) return false;
+  if (!isOptionalStringField(value.packIndex, "number")) return false;
+  if (!isOptionalStringField(value.packSize, "number")) return false;
 
   return true;
 }

@@ -1,38 +1,61 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 import { Scanner } from "./Scanner";
 
-const renderMock = vi.fn();
+const startMock = vi.fn();
+const stopMock = vi.fn();
 const clearMock = vi.fn();
 
 vi.mock("html5-qrcode", () => ({
-  Html5QrcodeScanner: vi.fn(),
+  Html5Qrcode: vi.fn(),
 }));
 
 describe("Scanner", () => {
   beforeEach(() => {
-    vi.mocked(Html5QrcodeScanner).mockReset();
-    renderMock.mockReset();
+    vi.mocked(Html5Qrcode).mockReset();
+    vi.mocked(Html5Qrcode).getCameras = vi.fn().mockResolvedValue([{ id: "camera-1", label: "后置摄像头" }]);
+    startMock.mockReset();
+    stopMock.mockReset();
     clearMock.mockReset();
+    startMock.mockResolvedValue(null);
+    stopMock.mockResolvedValue(undefined);
+    clearMock.mockReturnValue(undefined);
+    vi.mocked(Html5Qrcode).mockImplementation(() => ({
+      start: startMock,
+      stop: stopMock,
+      clear: clearMock,
+    }) as never);
   });
 
-  it("shows a fallback message when scanner startup fails", () => {
-    vi.mocked(Html5QrcodeScanner).mockImplementationOnce(() => {
-      throw new Error("camera denied");
-    });
+  it("shows a fallback message when scanner startup fails", async () => {
+    vi.mocked(Html5Qrcode).getCameras = vi.fn().mockRejectedValue(new Error("camera denied"));
 
     render(<Scanner onDetected={vi.fn()} />);
 
-    expect(screen.getByText("扫码功能不可用，可手动输入编号")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    expect(await screen.findByText("扫码功能不可用，可手动输入编号")).toBeInTheDocument();
   });
 
-  it("swallows scanner teardown failures", () => {
-    vi.mocked(Html5QrcodeScanner).mockImplementationOnce(() => ({
-      render: renderMock,
-      clear: () => Promise.reject(new Error("teardown failed")),
-    }) as never);
+  it("starts scanning with a Chinese control button", async () => {
+    render(<Scanner onDetected={vi.fn()} />);
 
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    expect(startMock).toHaveBeenCalledWith(
+      "camera-1",
+      { fps: 8, qrbox: { width: 240, height: 120 } },
+      expect.any(Function),
+      expect.any(Function)
+    );
+    expect(screen.getByRole("button", { name: "停止扫码" })).toBeInTheDocument();
+  });
+
+  it("clears the scanner on unmount", () => {
     const { unmount } = render(<Scanner onDetected={vi.fn()} />);
 
     expect(() => {

@@ -8,6 +8,8 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
   const gameOptions = useMemo(() => mergeWithDefaultGames(games), [games]);
   const [code, setCode] = useState("");
   const [gameId, setGameId] = useState(games[0]?.id ?? DEFAULT_GAMES[0].id);
+  const [packName, setPackName] = useState("");
+  const [packIndex, setPackIndex] = useState("1");
   const [message, setMessage] = useState("");
 
   const selectedGame = useMemo(
@@ -20,6 +22,25 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
 
     if (!cleanCode) {
       setMessage("请先扫描或输入彩票编号");
+      return;
+    }
+
+    const cleanPackName = packName.trim();
+
+    if (!cleanPackName) {
+      setMessage("请输入包号");
+      return;
+    }
+
+    const cleanPackIndex = Number(packIndex);
+
+    if (!Number.isInteger(cleanPackIndex) || cleanPackIndex <= 0) {
+      setMessage("本包序号必须是大于 0 的整数");
+      return;
+    }
+
+    if (selectedGame.packSize && cleanPackIndex > selectedGame.packSize) {
+      setMessage(`本票种每包最多 ${selectedGame.packSize} 张`);
       return;
     }
 
@@ -41,6 +62,10 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
         gameId: selectedGame.id,
         gameName: selectedGame.name,
         price: selectedGame.price,
+        packId: `${selectedGame.id}:${cleanPackName}`,
+        packName: cleanPackName,
+        packIndex: cleanPackIndex,
+        packSize: selectedGame.packSize,
         status: "unopened",
         prizeAmount: 0,
         purchasedAt: now.slice(0, 10),
@@ -49,6 +74,7 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
       });
 
       setCode("");
+      setPackIndex(String(cleanPackIndex + 1));
       setMessage("已保存为未刮开");
       await onSaved();
     } catch (cause) {
@@ -78,6 +104,22 @@ export function ScanPage({ games, onSaved }: { games: Game[]; onSaved: () => Pro
             </option>
           ))}
         </select>
+      </label>
+      <label className="field">
+        <span>包号</span>
+        <input
+          value={packName}
+          onChange={(event) => setPackName(event.target.value)}
+          placeholder="例如：好运十倍-001"
+        />
+      </label>
+      <label className="field">
+        <span>本包第几张</span>
+        <input
+          inputMode="numeric"
+          value={packIndex}
+          onChange={(event) => setPackIndex(event.target.value)}
+        />
       </label>
       <button className="primary-button" type="button" onClick={handleSave}>
         保存入库

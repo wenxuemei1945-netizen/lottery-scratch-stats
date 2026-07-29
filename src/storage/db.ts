@@ -8,6 +8,7 @@ interface LotteryDb extends DBSchema {
     indexes: {
       "by-code": string;
       "by-game": string;
+      "by-pack": string;
       "by-status": string;
     };
   };
@@ -21,20 +22,38 @@ interface LotteryDb extends DBSchema {
 }
 
 const DB_NAME = "lottery-scratch-stats";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<LotteryDb>> | undefined;
 
 export function getDatabase() {
   dbPromise ??= openDB<LotteryDb>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      const ticketStore = db.createObjectStore("tickets", { keyPath: "id" });
-      ticketStore.createIndex("by-code", "code", { unique: true });
-      ticketStore.createIndex("by-game", "gameId");
-      ticketStore.createIndex("by-status", "status");
+    upgrade(db, oldVersion, _newVersion, transaction) {
+      const ticketStore =
+        oldVersion < 1 ? db.createObjectStore("tickets", { keyPath: "id" }) : transaction.objectStore("tickets");
 
-      const gameStore = db.createObjectStore("games", { keyPath: "id" });
-      gameStore.createIndex("by-name", "name", { unique: false });
+      if (!ticketStore.indexNames.contains("by-code")) {
+        ticketStore.createIndex("by-code", "code", { unique: true });
+      }
+
+      if (!ticketStore.indexNames.contains("by-game")) {
+        ticketStore.createIndex("by-game", "gameId");
+      }
+
+      if (!ticketStore.indexNames.contains("by-pack")) {
+        ticketStore.createIndex("by-pack", "packId");
+      }
+
+      if (!ticketStore.indexNames.contains("by-status")) {
+        ticketStore.createIndex("by-status", "status");
+      }
+
+      const gameStore =
+        oldVersion < 1 ? db.createObjectStore("games", { keyPath: "id" }) : transaction.objectStore("games");
+
+      if (!gameStore.indexNames.contains("by-name")) {
+        gameStore.createIndex("by-name", "name", { unique: false });
+      }
     }
   });
 

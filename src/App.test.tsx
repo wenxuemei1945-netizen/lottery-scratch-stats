@@ -33,7 +33,7 @@ describe("App navigation", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Loading ticket data");
+    expect(screen.getByRole("status")).toHaveTextContent("正在加载彩票数据");
     expect(screen.queryByText("Lottery list")).not.toBeInTheDocument();
   });
 
@@ -49,16 +49,16 @@ describe("App navigation", () => {
     render(<App />);
 
     expect(screen.getByRole("alert")).toHaveTextContent("IndexedDB unavailable");
-    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "重试" })).toBeEnabled();
   });
 
   it("starts on the home page and navigates to ticket list", async () => {
     render(<App />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Tickets" }));
+    await user.click(screen.getByRole("button", { name: "票据" }));
 
-    expect(screen.getByRole("heading", { name: "Ticket list" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "票据列表" })).toBeInTheDocument();
   });
 
   it("lets the bottom nav switch away from ticket detail", async () => {
@@ -73,13 +73,13 @@ describe("App navigation", () => {
     render(<App />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Tickets" }));
+    await user.click(screen.getByRole("button", { name: "票据" }));
     await user.click(screen.getByRole("button", { name: /A/ }));
 
     expect(screen.getByRole("heading", { name: "Good Luck" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Tickets" }));
+    await user.click(screen.getByRole("button", { name: "票据" }));
 
-    expect(screen.getByRole("heading", { name: "Ticket list" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "票据列表" })).toBeInTheDocument();
   });
 });

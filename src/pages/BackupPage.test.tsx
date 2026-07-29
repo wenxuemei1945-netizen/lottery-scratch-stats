@@ -38,7 +38,7 @@ describe("BackupPage", () => {
 
     render(<BackupPage onImported={onImported} />);
 
-    await userEvent.upload(screen.getByLabelText("导入 JSON 备份"), file);
+    await userEvent.upload(screen.getByLabelText("导入备份文件"), file);
 
     await waitFor(async () => {
       expect(await listTickets()).toHaveLength(1);
@@ -53,10 +53,10 @@ describe("BackupPage", () => {
 
     render(<BackupPage onImported={onImported} />);
 
-    await userEvent.upload(screen.getByLabelText("导入 JSON 备份"), file);
+    await userEvent.upload(screen.getByLabelText("导入备份文件"), file);
 
     await waitFor(() => {
-      expect(screen.getByText("导入失败：备份文件不是有效的 JSON")).toBeInTheDocument();
+      expect(screen.getByText("导入失败：备份文件不是有效的数据文件")).toBeInTheDocument();
     });
     expect(onImported).not.toHaveBeenCalled();
   });
@@ -78,7 +78,7 @@ describe("BackupPage", () => {
 
     render(<BackupPage onImported={onImported} />);
 
-    await userEvent.upload(screen.getByLabelText("导入 JSON 备份"), file);
+    await userEvent.upload(screen.getByLabelText("导入备份文件"), file);
 
     await waitFor(async () => {
       expect(await listTickets()).toHaveLength(1);
@@ -107,7 +107,7 @@ describe("BackupPage", () => {
 
     render(<BackupPage onImported={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "导出 JSON 备份" }));
+    fireEvent.click(screen.getByRole("button", { name: "导出备份文件" }));
 
     await waitFor(() => {
       expect(createObjectURLSpy).toHaveBeenCalled();

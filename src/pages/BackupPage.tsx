@@ -33,10 +33,10 @@ export function BackupPage({ onImported }: { onImported: () => Promise<void> }) 
     <section className="page">
       <h1>备份恢复</h1>
       <button className="primary-button" type="button" onClick={exportBackup}>
-        导出 JSON 备份
+        导出备份文件
       </button>
       <label className="field">
-        <span>导入 JSON 备份</span>
+        <span>导入备份文件</span>
         <input
           type="file"
           accept="application/json"
@@ -53,7 +53,7 @@ function readFileText(file: File): Promise<string> {
     const reader = new FileReader();
 
     reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    reader.onerror = () => reject(reader.error ?? new Error("读取文件失败"));
     reader.readAsText(file);
   });
 }

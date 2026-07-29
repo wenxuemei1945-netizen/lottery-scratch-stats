@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeTicket } from "../test/testData";
-import { calculateGameStats, calculateOverallStats } from "./stats";
+import { calculateGameStats, calculateOverallStats, calculatePackStats } from "./stats";
 
 describe("statistics", () => {
   it("counts unopened tickets as investment but excludes them from win-rate denominator", () => {
@@ -32,6 +32,60 @@ describe("statistics", () => {
     expect(calculateGameStats(tickets)).toEqual([
       expect.objectContaining({ gameId: "g1", gameName: "好运十倍", totalInvestment: 10, totalPrize: 20, netProfit: 10 }),
       expect.objectContaining({ gameId: "g2", gameName: "喜相逢", totalInvestment: 20, totalPrize: 0, netProfit: -20 })
+    ]);
+  });
+
+  it("groups statistics by package", () => {
+    const tickets = [
+      makeTicket({
+        id: "1",
+        code: "A",
+        price: 10,
+        packId: "pack-a",
+        packName: "好运十倍-001",
+        packSize: 50,
+        status: "won",
+        prizeAmount: 30,
+      }),
+      makeTicket({
+        id: "2",
+        code: "B",
+        price: 10,
+        packId: "pack-a",
+        packName: "好运十倍-001",
+        packSize: 50,
+        status: "lost",
+        prizeAmount: 0,
+      }),
+      makeTicket({
+        id: "3",
+        code: "C",
+        price: 20,
+        packId: "pack-b",
+        packName: "喜相逢-001",
+        packSize: 25,
+        status: "lost",
+        prizeAmount: 0,
+      }),
+    ];
+
+    expect(calculatePackStats(tickets)).toEqual([
+      expect.objectContaining({
+        packId: "pack-a",
+        packName: "好运十倍-001",
+        packSize: 50,
+        totalInvestment: 20,
+        totalPrize: 30,
+        netProfit: 10,
+      }),
+      expect.objectContaining({
+        packId: "pack-b",
+        packName: "喜相逢-001",
+        packSize: 25,
+        totalInvestment: 20,
+        totalPrize: 0,
+        netProfit: -20,
+      }),
     ]);
   });
 });

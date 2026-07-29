@@ -34,6 +34,11 @@ select {
   font-size: 24px;
 }
 
+.page h2 {
+  margin: 12px 0 0;
+  font-size: 18px;
+}
+
 .state-panel {
   display: grid;
   gap: 12px;
@@ -161,22 +166,43 @@ select {
 
 .ticket-row {
   display: grid;
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   border: 1px solid #d8ddd2;
   border-radius: 8px;
   padding: 12px;
-  text-align: left;
   background: #ffffff;
 }
 
-.ticket-row span {
+.ticket-main-button {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+}
+
+.ticket-main-button span {
   font-size: 13px;
   color: #65716b;
 }
 
-.ticket-row small {
+.ticket-main-button small {
   color: #65716b;
+}
+
+.danger-button {
+  min-height: 36px;
+  border: 1px solid #efd0cc;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff7f6;
+  color: #b6332a;
 }
 
 .empty-state {
@@ -242,8 +268,18 @@ select {
   font-weight: 700;
 }
 
+.danger-outline-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 1px solid #efd0cc;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #b6332a;
+  font-weight: 700;
+}
+
 .message {
   margin: 12px 0 0;
   color: #b6332a;
 }
-

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { makeGame, makeTicket } from "../test/testData";
 import {
   getTicketByCode,
+  deleteTicket,
   listGames,
   listTickets,
   replaceAllData,
@@ -34,6 +35,15 @@ describe("ticket repository", () => {
     await saveTicket(makeTicket({ id: "ticket-1", code: "A" }));
 
     await expect(saveTicket(makeTicket({ id: "ticket-2", code: "A" }))).rejects.toThrow("彩票编号已存在");
+  });
+
+  it("deletes a ticket by id", async () => {
+    await saveTicket(makeTicket({ id: "ticket-1", code: "A" }));
+
+    await deleteTicket("ticket-1");
+
+    expect(await getTicketByCode("A")).toBeUndefined();
+    expect(await listTickets()).toEqual([]);
   });
 
   it("keeps existing data when replaceAllData fails", async () => {

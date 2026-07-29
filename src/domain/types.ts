@@ -6,6 +6,10 @@ export interface Ticket {
   gameId: string;
   gameName: string;
   price: number;
+  packId?: string;
+  packName?: string;
+  packIndex?: number;
+  packSize?: number;
   status: TicketStatus;
   prizeAmount: number;
   purchasedAt: string;

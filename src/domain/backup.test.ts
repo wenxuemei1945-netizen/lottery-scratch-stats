@@ -31,7 +31,7 @@ describe("backup helpers", () => {
   });
 
   it("rejects invalid backup JSON", () => {
-    expect(() => parseBackupJson("{bad json")).toThrow("\u5907\u4efd\u6587\u4ef6\u4e0d\u662f\u6709\u6548\u7684 JSON");
+    expect(() => parseBackupJson("{bad json")).toThrow("备份文件不是有效的数据文件");
     expect(() => parseBackupJson(JSON.stringify({ version: 2, games: [], tickets: [] }))).toThrow("\u5907\u4efd\u6587\u4ef6\u7248\u672c\u4e0d\u652f\u6301");
     expect(() => parseBackupJson(JSON.stringify({ version: 1, games: {}, tickets: [] }))).toThrow("\u5907\u4efd\u6587\u4ef6\u683c\u5f0f\u65e0\u6548");
   });

@@ -8,17 +8,18 @@ import { TicketDetailPage } from "./TicketDetailPage";
 describe("TicketDetailPage", () => {
   beforeEach(async () => {
     await resetDatabase();
+    vi.restoreAllMocks();
   });
 
   it("marks a ticket as won with prize amount", async () => {
     const ticket = makeTicket({ id: "1", code: "A", status: "unopened", prizeAmount: 0 });
     await saveTicket(ticket);
 
-    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onBack={vi.fn()} />);
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onDeleted={vi.fn()} onBack={vi.fn()} />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Prize amount"), "50");
-    await user.click(screen.getByRole("button", { name: "Mark Won" }));
+    await user.type(screen.getByLabelText("中奖金额"), "50");
+    await user.click(screen.getByRole("button", { name: "标记中奖" }));
 
     expect(await getTicketByCode("A")).toEqual(
       expect.objectContaining({ status: "won", prizeAmount: 50 })
@@ -29,31 +30,31 @@ describe("TicketDetailPage", () => {
     const ticket = makeTicket({ id: "1", code: "A", status: "unopened", prizeAmount: 0 });
     await saveTicket(ticket);
 
-    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onBack={vi.fn()} />);
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onDeleted={vi.fn()} onBack={vi.fn()} />);
 
-    await userEvent.type(screen.getByLabelText("Prize amount"), "abc");
-    await userEvent.click(screen.getByRole("button", { name: "Mark Won" }));
+    await userEvent.type(screen.getByLabelText("中奖金额"), "abc");
+    await userEvent.click(screen.getByRole("button", { name: "标记中奖" }));
 
     expect(await getTicketByCode("A")).toEqual(
       expect.objectContaining({ status: "unopened", prizeAmount: 0 })
     );
-    expect(screen.getByText("Prize amount must be a valid number")).toBeInTheDocument();
+    expect(screen.getByText("中奖金额必须是有效数字")).toBeInTheDocument();
   });
 
   it("shows a message and blocks invalid transitions", async () => {
     const ticket = makeTicket({ id: "1", code: "A", status: "lost", prizeAmount: 0 });
     await saveTicket(ticket);
 
-    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onBack={vi.fn()} />);
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onDeleted={vi.fn()} onBack={vi.fn()} />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Prize amount"), "60");
-    await user.click(screen.getByRole("button", { name: "Mark Won" }));
+    await user.type(screen.getByLabelText("中奖金额"), "60");
+    await user.click(screen.getByRole("button", { name: "标记中奖" }));
 
     expect(await getTicketByCode("A")).toEqual(
       expect.objectContaining({ status: "lost", prizeAmount: 0 })
     );
-    expect(screen.getByText("Current status cannot change to that state")).toBeInTheDocument();
+    expect(screen.getByText("当前状态不能变更为该状态")).toBeInTheDocument();
   });
 
   it("redeems using the current prize input value", async () => {
@@ -67,13 +68,13 @@ describe("TicketDetailPage", () => {
     });
     await saveTicket(ticket);
 
-    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onBack={vi.fn()} />);
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onDeleted={vi.fn()} onBack={vi.fn()} />);
 
     const user = userEvent.setup();
-    const input = screen.getByLabelText("Prize amount");
+    const input = screen.getByLabelText("中奖金额");
     await user.clear(input);
     await user.type(input, "50");
-    await user.click(screen.getByRole("button", { name: "Mark Redeemed" }));
+    await user.click(screen.getByRole("button", { name: "标记已兑奖" }));
 
     expect(await getTicketByCode("A")).toEqual(
       expect.objectContaining({
@@ -83,5 +84,22 @@ describe("TicketDetailPage", () => {
         redeemedAt: expect.any(String),
       })
     );
+  });
+
+  it("deletes the current ticket after confirmation", async () => {
+    const ticket = makeTicket({ id: "1", code: "A" });
+    await saveTicket(ticket);
+    const onDeleted = vi.fn();
+    const onBack = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<TicketDetailPage ticket={ticket} onSaved={vi.fn()} onDeleted={onDeleted} onBack={onBack} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "删除这张票" }));
+
+    expect(await getTicketByCode("A")).toBeUndefined();
+    expect(onDeleted).toHaveBeenCalled();
+    expect(onBack).toHaveBeenCalled();
   });
 });
