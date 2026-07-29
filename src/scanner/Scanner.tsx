@@ -1,3 +1,4 @@
+import type { IScannerControls } from "@zxing/browser";
 import { useEffect, useRef, useState } from "react";
 
 type DetectedBarcode = {
@@ -45,6 +46,7 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const frameRef = useRef<number | null>(null);
+  const zxingControlsRef = useRef<IScannerControls | null>(null);
   const scanningRef = useRef(false);
 
   useEffect(() => {
@@ -85,18 +87,57 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
       setScanning(true);
       setHint("请把彩票底部条码放入画面");
 
-      const detector = await createBarcodeDetector();
-
-      if (!detector) {
-        setHint("摄像头已打开，如未自动识别请手动输入编号");
-        return;
-      }
-
-      scanFrame(detector);
+      void startBarcodeDetection(video);
     } catch {
       stopScanning();
       setError("摄像头不可用，可手动输入编号");
       setHint("点击按钮后打开摄像头");
+    }
+  }
+
+  async function startBarcodeDetection(video: HTMLVideoElement) {
+    const nativeDetector = await createBarcodeDetector();
+
+    if (nativeDetector) {
+      scanFrame(nativeDetector);
+    }
+
+    await startZxingDetection(video);
+  }
+
+  async function startZxingDetection(video: HTMLVideoElement) {
+    try {
+      const [{ BarcodeFormat, BrowserMultiFormatReader }, { DecodeHintType }] = await Promise.all([
+        import("@zxing/browser"),
+        import("@zxing/library"),
+      ]);
+
+      if (!scanningRef.current) return;
+
+      const zxingFormats = [
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.CODE_39,
+        BarcodeFormat.CODE_93,
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.ITF,
+        BarcodeFormat.QR_CODE,
+      ];
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, zxingFormats);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 180 });
+
+      zxingControlsRef.current = reader.scan(video, (result) => {
+        const code = result?.getText().trim();
+
+        if (code) {
+          onDetected(code);
+          stopScanning();
+        }
+      });
+      setHint("正在自动识别条码，也可手动输入编号");
+    } catch {
+      setHint("摄像头已打开，如未自动识别请手动输入编号");
     }
   }
 
@@ -124,6 +165,9 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
   }
 
   function stopScanning() {
+    zxingControlsRef.current?.stop();
+    zxingControlsRef.current = null;
+
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;

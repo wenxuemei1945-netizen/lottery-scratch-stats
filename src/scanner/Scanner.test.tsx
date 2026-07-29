@@ -8,12 +8,28 @@ const playMock = vi.fn();
 const pauseMock = vi.fn();
 const stopTrackMock = vi.fn();
 const detectMock = vi.fn();
+const zxingScanMock = vi.fn();
+const zxingStopMock = vi.fn();
 
 class MockBarcodeDetector {
   static getSupportedFormats = vi.fn().mockResolvedValue(["code_128", "qr_code"]);
 
   detect = detectMock;
 }
+
+vi.mock("@zxing/browser", () => ({
+  BarcodeFormat: {
+    CODE_128: "CODE_128",
+    CODE_39: "CODE_39",
+    CODE_93: "CODE_93",
+    EAN_13: "EAN_13",
+    ITF: "ITF",
+    QR_CODE: "QR_CODE",
+  },
+  BrowserMultiFormatReader: vi.fn().mockImplementation(() => ({
+    scan: zxingScanMock,
+  })),
+}));
 
 describe("Scanner", () => {
   beforeEach(() => {
@@ -22,8 +38,11 @@ describe("Scanner", () => {
     pauseMock.mockReset();
     stopTrackMock.mockReset();
     detectMock.mockReset();
+    zxingScanMock.mockReset();
+    zxingStopMock.mockReset();
     playMock.mockResolvedValue(undefined);
     detectMock.mockResolvedValue([]);
+    zxingScanMock.mockReturnValue({ stop: zxingStopMock });
     Object.defineProperty(HTMLMediaElement.prototype, "play", {
       configurable: true,
       value: playMock,
@@ -82,6 +101,27 @@ describe("Scanner", () => {
 
     await waitFor(() => expect(onDetected).toHaveBeenCalledWith("J0353-26082-0564563-133-3"));
     expect(stopTrackMock).toHaveBeenCalled();
+  });
+
+  it("reports a barcode through ZXing when the browser detector is unavailable", async () => {
+    Object.defineProperty(window, "BarcodeDetector", {
+      configurable: true,
+      value: undefined,
+    });
+    const onDetected = vi.fn();
+    zxingScanMock.mockImplementation((_video, callback) => {
+      window.setTimeout(() => callback({ getText: () => "J0810-25273-0133810-109-3" }, undefined), 0);
+      return { stop: zxingStopMock };
+    });
+
+    render(<Scanner onDetected={onDetected} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    await waitFor(() => expect(onDetected).toHaveBeenCalledWith("J0810-25273-0133810-109-3"));
+    expect(zxingScanMock).toHaveBeenCalled();
+    expect(zxingStopMock).toHaveBeenCalled();
   });
 
   it("shows a fallback message when camera startup fails", async () => {
