@@ -59,6 +59,7 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const frameRef = useRef<number | null>(null);
+  const cropFrameRef = useRef<number | null>(null);
   const zxingControlsRef = useRef<IScannerControls | null>(null);
   const scanningRef = useRef(false);
 
@@ -135,11 +136,58 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
           stopScanning();
         }
       });
-      setHint("正在自动识别条码，也可手动输入编号");
+      scanCroppedBarcode(video, reader);
+      setHint("将彩票底部条码对准框内");
     } catch (cause) {
       const message = cause instanceof Error && cause.message ? cause.message : "未知错误";
       setHint(`自动识别启动失败：${message}，可手动输入编号`);
     }
+  }
+
+  function scanCroppedBarcode(video: HTMLVideoElement, reader: BrowserMultiFormatReader) {
+    if (!scanningRef.current) return;
+
+    cropFrameRef.current = requestAnimationFrame(() => {
+      if (!scanningRef.current) return;
+
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+
+      if (videoWidth <= 0 || videoHeight <= 0) {
+        scanCroppedBarcode(video, reader);
+        return;
+      }
+
+      const sourceWidth = Math.round(videoWidth * 0.86);
+      const sourceHeight = Math.round(videoHeight * 0.28);
+      const sourceX = Math.round((videoWidth - sourceWidth) / 2);
+      const sourceY = Math.round((videoHeight - sourceHeight) / 2);
+      const canvas = document.createElement("canvas");
+      canvas.width = 1100;
+      canvas.height = 320;
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        scanCroppedBarcode(video, reader);
+        return;
+      }
+
+      context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const code = reader.decodeFromCanvas(canvas).getText().trim();
+
+        if (code) {
+          onDetected(code);
+          stopScanning();
+          return;
+        }
+      } catch {
+        // Most frames do not contain a readable barcode.
+      }
+
+      window.setTimeout(() => scanCroppedBarcode(video, reader), 180);
+    });
   }
 
   function scanFrame(detector: BarcodeDetectorInstance) {
@@ -174,6 +222,11 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
       frameRef.current = null;
     }
 
+    if (cropFrameRef.current !== null) {
+      cancelAnimationFrame(cropFrameRef.current);
+      cropFrameRef.current = null;
+    }
+
     if (videoRef.current) {
       try {
         videoRef.current.pause();
@@ -194,6 +247,11 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
     <div className="scanner-shell">
       <div className="scanner-box">
         <video ref={videoRef} className="scanner-video" title="摄像头预览" />
+        {scanning && (
+          <div className="scanner-target" aria-label="条码取景框">
+            <span>将条码放入框内</span>
+          </div>
+        )}
         {!scanning && <span className="scanner-placeholder">摄像头预览</span>}
       </div>
       <button className="ghost-button" type="button" onClick={() => (scanning ? stopScanning() : void startScanning())}>

@@ -10,6 +10,7 @@ const stopTrackMock = vi.fn();
 const detectMock = vi.fn();
 const zxingScanMock = vi.fn();
 const zxingStopMock = vi.fn();
+const zxingDecodeCanvasMock = vi.fn();
 
 class MockBarcodeDetector {
   static getSupportedFormats = vi.fn().mockResolvedValue(["code_128", "qr_code"]);
@@ -28,6 +29,7 @@ vi.mock("@zxing/browser", () => ({
   },
   BrowserMultiFormatReader: vi.fn().mockImplementation(() => ({
     scan: zxingScanMock,
+    decodeFromCanvas: zxingDecodeCanvasMock,
   })),
 }));
 
@@ -40,9 +42,13 @@ describe("Scanner", () => {
     detectMock.mockReset();
     zxingScanMock.mockReset();
     zxingStopMock.mockReset();
+    zxingDecodeCanvasMock.mockReset();
     playMock.mockResolvedValue(undefined);
     detectMock.mockResolvedValue([]);
     zxingScanMock.mockReturnValue({ stop: zxingStopMock });
+    zxingDecodeCanvasMock.mockImplementation(() => {
+      throw new Error("not found");
+    });
     Object.defineProperty(HTMLMediaElement.prototype, "play", {
       configurable: true,
       value: playMock,
@@ -50,6 +56,17 @@ describe("Scanner", () => {
     Object.defineProperty(HTMLMediaElement.prototype, "pause", {
       configurable: true,
       value: pauseMock,
+    });
+    Object.defineProperty(HTMLVideoElement.prototype, "videoWidth", {
+      configurable: true,
+      get: () => 1280,
+    });
+    Object.defineProperty(HTMLVideoElement.prototype, "videoHeight", {
+      configurable: true,
+      get: () => 720,
+    });
+    HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+      drawImage: vi.fn(),
     });
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
@@ -88,6 +105,8 @@ describe("Scanner", () => {
     expect(video.srcObject).toBeTruthy();
     expect(video.getAttribute("playsinline")).toBe("true");
     expect(screen.getByRole("button", { name: "停止扫码" })).toBeInTheDocument();
+    expect(screen.getByLabelText("条码取景框")).toBeInTheDocument();
+    expect(screen.getByText("将条码放入框内")).toBeInTheDocument();
   });
 
   it("reports a barcode when the browser detector finds one", async () => {
@@ -122,6 +141,19 @@ describe("Scanner", () => {
     await waitFor(() => expect(onDetected).toHaveBeenCalledWith("J0810-25273-0133810-109-3"));
     expect(zxingScanMock).toHaveBeenCalled();
     expect(zxingStopMock).toHaveBeenCalled();
+  });
+
+  it("reports a barcode from a cropped center scan area", async () => {
+    const onDetected = vi.fn();
+    zxingDecodeCanvasMock.mockReturnValueOnce({ getText: () => "J0791-26101-0357483-108-3" });
+
+    render(<Scanner onDetected={onDetected} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    await waitFor(() => expect(onDetected).toHaveBeenCalledWith("J0791-26101-0357483-108-3"));
+    expect(zxingDecodeCanvasMock).toHaveBeenCalled();
   });
 
   it("shows the ZXing startup failure reason when decoding cannot start", async () => {
