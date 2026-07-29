@@ -20,17 +20,18 @@ export default defineConfig({
         start_url: "./",
         icons: [
           { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512.png", sizes: "512x512", type: "image/png" }
-        ]
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png" },
+        ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico}"]
-      }
-    })
+        globPatterns: ["**/*.{js,css,html,png,svg,ico,gz}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
+    }),
   ],
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["src/test/setup.ts"]
-  }
+    setupFiles: ["src/test/setup.ts"],
+  },
 });

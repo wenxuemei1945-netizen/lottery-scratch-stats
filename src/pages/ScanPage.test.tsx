@@ -5,6 +5,12 @@ import { getTicketByCode, resetDatabase, saveTicket } from "../storage/ticketRep
 import { makeGame, makeTicket } from "../test/testData";
 import { ScanPage } from "./ScanPage";
 
+const recognizeTicketCodeMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../ocr/ticketCodeOcr", () => ({
+  recognizeTicketCode: recognizeTicketCodeMock,
+}));
+
 vi.mock("../scanner/Scanner", () => ({
   Scanner: ({ onDetected }: { onDetected: (code: string) => void }) => (
     <button type="button" onClick={() => onDetected("MOCK-SCANNED-CODE")}>
@@ -16,6 +22,7 @@ vi.mock("../scanner/Scanner", () => ({
 describe("ScanPage", () => {
   beforeEach(async () => {
     await resetDatabase();
+    recognizeTicketCodeMock.mockReset();
   });
 
   it("creates an unopened ticket from manual code entry", async () => {
@@ -101,5 +108,39 @@ describe("ScanPage", () => {
     await user.click(screen.getByRole("button", { name: "模拟扫码" }));
 
     expect(screen.getByLabelText("彩票编号")).toHaveValue("MOCK-SCANNED-CODE");
+  });
+
+  it("fills the code field from photo OCR when package information is incomplete", async () => {
+    recognizeTicketCodeMock.mockResolvedValue("J0810-25273-0133810-109-3");
+    render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
+
+    const user = userEvent.setup();
+    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText("拍照识别编号"), image);
+
+    expect(await screen.findByText("已识别编号，请填写包号后保存入库")).toBeInTheDocument();
+    expect(screen.getByLabelText("彩票编号")).toHaveValue("J0810-25273-0133810-109-3");
+  });
+
+  it("automatically saves a ticket after photo OCR when package information is ready", async () => {
+    recognizeTicketCodeMock.mockResolvedValue("J0810-25273-0133810-109-3");
+    const onSaved = vi.fn();
+    render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("包号"), "好运十倍-001");
+    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText("拍照识别编号"), image);
+
+    expect(await screen.findByText("已拍照识别并保存入库")).toBeInTheDocument();
+    expect(await getTicketByCode("J0810-25273-0133810-109-3")).toEqual(
+      expect.objectContaining({
+        code: "J0810-25273-0133810-109-3",
+        packName: "好运十倍-001",
+        packIndex: 1,
+      })
+    );
+    expect(screen.getByLabelText("本包第几张")).toHaveValue("2");
+    expect(onSaved).toHaveBeenCalled();
   });
 });

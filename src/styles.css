@@ -278,6 +278,28 @@ select {
   font-size: 13px;
 }
 
+.photo-ocr-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 10px;
+  border: 1px solid #cfd6cb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d6b3b;
+  font-weight: 700;
+}
+
+.photo-ocr-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .field {
   display: grid;
   gap: 6px;
