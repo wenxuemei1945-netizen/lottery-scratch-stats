@@ -5,32 +5,9 @@ import { getTicketByCode, resetDatabase, saveTicket } from "../storage/ticketRep
 import { makeGame, makeTicket } from "../test/testData";
 import { ScanPage } from "./ScanPage";
 
-const recognizeTicketCodeMock = vi.hoisted(() => vi.fn());
-
-vi.mock("../ocr/ticketCodeOcr", () => ({
-  recognizeTicketCode: recognizeTicketCodeMock,
-}));
-
-vi.mock("../scanner/Scanner", () => ({
-  Scanner: ({ onDetected }: { onDetected: (code: string) => void }) => (
-    <button type="button" onClick={() => onDetected("MOCK-SCANNED-CODE")}>
-      模拟扫码
-    </button>
-  ),
-}));
-
-function recognized(code: string) {
-  return {
-    code,
-    rawText: code,
-    attempts: [{ regionId: "bottom-right-number", text: code }],
-  };
-}
-
 describe("ScanPage", () => {
   beforeEach(async () => {
     await resetDatabase();
-    recognizeTicketCodeMock.mockReset();
   });
 
   it("creates an unopened ticket from manual code entry", async () => {
@@ -57,6 +34,18 @@ describe("ScanPage", () => {
     );
     expect(screen.getByLabelText("本包第几张")).toHaveValue("2");
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("requires a ticket code before saving", async () => {
+    const onSaved = vi.fn();
+    render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("包号"), "好运十倍-001");
+    await user.click(screen.getByRole("button", { name: "保存入库" }));
+
+    expect(await screen.findByText("请输入彩票编号")).toBeInTheDocument();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
   it("requires a package code before saving", async () => {
@@ -109,66 +98,12 @@ describe("ScanPage", () => {
     expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it("fills the code field from scanner detection", async () => {
+  it("does not show scanner or photo recognition controls", () => {
     render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
 
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "模拟扫码" }));
-
-    expect(screen.getByLabelText("彩票编号")).toHaveValue("MOCK-SCANNED-CODE");
-  });
-
-  it("fills the code field from photo OCR when package information is incomplete", async () => {
-    recognizeTicketCodeMock.mockResolvedValue(recognized("J0810-25273-0133810-109-3"));
-    render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
-
-    const user = userEvent.setup();
-    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
-    await user.upload(screen.getByLabelText("拍照识别编号"), image);
-
-    expect(await screen.findByText("已识别编号，请填写包号后保存入库")).toBeInTheDocument();
-    expect(screen.getByLabelText("彩票编号")).toHaveValue("J0810-25273-0133810-109-3");
-  });
-
-  it("automatically saves a ticket after photo OCR when package information is ready", async () => {
-    recognizeTicketCodeMock.mockResolvedValue(recognized("J0810-25273-0133810-109-3"));
-    const onSaved = vi.fn();
-    render(<ScanPage games={[makeGame()]} onSaved={onSaved} />);
-
-    const user = userEvent.setup();
-    await user.type(screen.getByLabelText("包号"), "好运十倍-001");
-    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
-    await user.upload(screen.getByLabelText("拍照识别编号"), image);
-
-    expect(await screen.findByText("已拍照识别并保存入库")).toBeInTheDocument();
-    expect(await getTicketByCode("J0810-25273-0133810-109-3")).toEqual(
-      expect.objectContaining({
-        code: "J0810-25273-0133810-109-3",
-        packName: "好运十倍-001",
-        packIndex: 1,
-      })
-    );
-    expect(screen.getByLabelText("本包第几张")).toHaveValue("2");
-    expect(onSaved).toHaveBeenCalled();
-  });
-
-  it("shows OCR diagnostics when photo recognition fails", async () => {
-    recognizeTicketCodeMock.mockResolvedValue({
-      code: null,
-      rawText: "J0810 25273\n无法看清",
-      attempts: [
-        { regionId: "bottom-right-number", text: "" },
-        { regionId: "bottom-center-number", text: "J0810 25273" },
-      ],
-    });
-    render(<ScanPage games={[makeGame()]} onSaved={vi.fn()} />);
-
-    const user = userEvent.setup();
-    const image = new File(["ticket"], "ticket.jpg", { type: "image/jpeg" });
-    await user.upload(screen.getByLabelText("拍照识别编号"), image);
-
-    expect(await screen.findByText("未识别到完整编号，请重新拍清底部编号或手动输入")).toBeInTheDocument();
-    expect(screen.getByText("识别到的文字：J0810 25273 无法看清")).toBeInTheDocument();
-    expect(screen.getByText("已尝试 2 个票面区域")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "手动入库" })).toBeInTheDocument();
+    expect(screen.queryByText("启动扫码")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("拍照识别编号")).not.toBeInTheDocument();
+    expect(screen.queryByText(/iPhone.*扫码/)).not.toBeInTheDocument();
   });
 });

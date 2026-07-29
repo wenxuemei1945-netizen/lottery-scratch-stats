@@ -1,4 +1,4 @@
-import { BarChart3, Home, List, QrCode, Upload } from "lucide-react";
+import { BarChart3, Home, List, PencilLine, Upload } from "lucide-react";
 import { useState } from "react";
 import { useLotteryData } from "./hooks/useLotteryData";
 import { BackupPage } from "./pages/BackupPage";
@@ -12,7 +12,7 @@ type Tab = "home" | "scan" | "tickets" | "stats" | "backup";
 
 const tabs = [
   { id: "home" as const, label: "首页", icon: Home },
-  { id: "scan" as const, label: "扫码", icon: QrCode },
+  { id: "scan" as const, label: "入库", icon: PencilLine },
   { id: "tickets" as const, label: "票据", icon: List },
   { id: "stats" as const, label: "统计", icon: BarChart3 },
   { id: "backup" as const, label: "备份", icon: Upload },

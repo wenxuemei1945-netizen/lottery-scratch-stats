@@ -34,7 +34,7 @@ describe("App navigation", () => {
     render(<App />);
 
     expect(screen.getByRole("status")).toHaveTextContent("正在加载彩票数据");
-    expect(screen.queryByText("Lottery list")).not.toBeInTheDocument();
+    expect(screen.queryByText("彩票列表")).not.toBeInTheDocument();
   });
 
   it("shows an error state when loading fails", () => {
@@ -50,6 +50,15 @@ describe("App navigation", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("IndexedDB unavailable");
     expect(screen.getByRole("button", { name: "重试" })).toBeEnabled();
+  });
+
+  it("starts on the home page and navigates to manual entry", async () => {
+    render(<App />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "入库" }));
+
+    expect(screen.getByRole("heading", { name: "手动入库" })).toBeInTheDocument();
   });
 
   it("starts on the home page and navigates to ticket list", async () => {
