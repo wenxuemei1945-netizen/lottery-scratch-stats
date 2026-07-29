@@ -14,7 +14,7 @@ export default defineConfig({
         description: "个人自用福利彩票刮刮乐统计工具",
         theme_color: "#1d6b3b",
         background_color: "#f6f7f2",
-        display: "standalone",
+        display: "browser",
         orientation: "portrait",
         scope: "./",
         start_url: "./",
