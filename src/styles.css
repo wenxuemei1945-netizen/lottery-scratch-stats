@@ -143,6 +143,25 @@ select {
   margin-bottom: 12px;
 }
 
+.stat-detail {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  border: 1px solid #d8ddd2;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.stat-detail h2,
+.stat-detail p {
+  margin: 0;
+}
+
+.stat-detail p {
+  color: #3f4b45;
+}
+
 .list-stack {
   display: grid;
   gap: 10px;
