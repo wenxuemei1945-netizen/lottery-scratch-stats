@@ -36,16 +36,9 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
     try {
       setError(null);
       hasDetected.current = false;
-      const cameras = await Html5Qrcode.getCameras();
-      const camera = cameras[0];
-
-      if (!camera) {
-        setError("未找到可用摄像头，可手动输入编号");
-        return;
-      }
 
       await scanner.start(
-        camera.id,
+        { facingMode: "environment" },
         { fps: 8, qrbox: { width: 240, height: 120 } },
         (decodedText) => {
           if (!hasDetected.current) {

@@ -30,7 +30,7 @@ describe("Scanner", () => {
   });
 
   it("shows a fallback message when scanner startup fails", async () => {
-    vi.mocked(Html5Qrcode).getCameras = vi.fn().mockRejectedValue(new Error("camera denied"));
+    startMock.mockRejectedValueOnce(new Error("camera denied"));
 
     render(<Scanner onDetected={vi.fn()} />);
 
@@ -47,12 +47,27 @@ describe("Scanner", () => {
     await user.click(screen.getByRole("button", { name: "启动扫码" }));
 
     expect(startMock).toHaveBeenCalledWith(
-      "camera-1",
+      { facingMode: "environment" },
       { fps: 8, qrbox: { width: 240, height: 120 } },
       expect.any(Function),
       expect.any(Function)
     );
     expect(screen.getByRole("button", { name: "停止扫码" })).toBeInTheDocument();
+  });
+
+  it("starts the environment camera without pre-enumerating devices", async () => {
+    vi.mocked(Html5Qrcode).getCameras = vi.fn().mockResolvedValue([]);
+    render(<Scanner onDetected={vi.fn()} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    expect(startMock).toHaveBeenCalledWith(
+      { facingMode: "environment" },
+      { fps: 8, qrbox: { width: 240, height: 120 } },
+      expect.any(Function),
+      expect.any(Function)
+    );
   });
 
   it("clears the scanner on unmount", () => {
