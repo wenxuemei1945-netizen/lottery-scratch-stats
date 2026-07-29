@@ -124,6 +124,19 @@ describe("Scanner", () => {
     expect(zxingStopMock).toHaveBeenCalled();
   });
 
+  it("shows the ZXing startup failure reason when decoding cannot start", async () => {
+    zxingScanMock.mockImplementationOnce(() => {
+      throw new Error("video dimensions unavailable");
+    });
+
+    render(<Scanner onDetected={vi.fn()} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "启动扫码" }));
+
+    expect(await screen.findByText("自动识别启动失败：video dimensions unavailable，可手动输入编号")).toBeInTheDocument();
+  });
+
   it("shows a fallback message when camera startup fails", async () => {
     getUserMediaMock.mockRejectedValueOnce(new Error("camera denied"));
 

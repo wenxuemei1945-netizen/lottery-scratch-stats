@@ -1,4 +1,9 @@
-import type { IScannerControls } from "@zxing/browser";
+import {
+  BarcodeFormat,
+  BrowserMultiFormatReader,
+  type IScannerControls,
+} from "@zxing/browser";
+import { DecodeHintType } from "@zxing/library";
 import { useEffect, useRef, useState } from "react";
 
 type DetectedBarcode = {
@@ -15,6 +20,14 @@ type BarcodeDetectorConstructor = {
 };
 
 const REQUESTED_BARCODE_FORMATS = ["code_128", "code_39", "ean_13", "qr_code"];
+const ZXING_FORMATS = [
+  BarcodeFormat.CODE_128,
+  BarcodeFormat.CODE_39,
+  BarcodeFormat.CODE_93,
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.ITF,
+  BarcodeFormat.QR_CODE,
+];
 
 function getBarcodeDetectorConstructor() {
   return (window as typeof window & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
@@ -107,23 +120,10 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
 
   async function startZxingDetection(video: HTMLVideoElement) {
     try {
-      const [{ BarcodeFormat, BrowserMultiFormatReader }, { DecodeHintType }] = await Promise.all([
-        import("@zxing/browser"),
-        import("@zxing/library"),
-      ]);
-
       if (!scanningRef.current) return;
 
-      const zxingFormats = [
-        BarcodeFormat.CODE_128,
-        BarcodeFormat.CODE_39,
-        BarcodeFormat.CODE_93,
-        BarcodeFormat.EAN_13,
-        BarcodeFormat.ITF,
-        BarcodeFormat.QR_CODE,
-      ];
       const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, zxingFormats);
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, ZXING_FORMATS);
       hints.set(DecodeHintType.TRY_HARDER, true);
       const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 180 });
 
@@ -136,8 +136,9 @@ export function Scanner({ onDetected }: { onDetected: (code: string) => void }) 
         }
       });
       setHint("正在自动识别条码，也可手动输入编号");
-    } catch {
-      setHint("摄像头已打开，如未自动识别请手动输入编号");
+    } catch (cause) {
+      const message = cause instanceof Error && cause.message ? cause.message : "未知错误";
+      setHint(`自动识别启动失败：${message}，可手动输入编号`);
     }
   }
 
